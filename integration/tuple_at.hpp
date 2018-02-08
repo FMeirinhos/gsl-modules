@@ -11,15 +11,28 @@
 #include <cassert>
 #include <tuple>
 
-/*
-Stolen from
-https://stackoverflow.com/questions/28997271/c11-way-to-index-tuple-at-runtime-without-using-switch
-
-tuple at operator
-*/
+// See http://foonathan.net/blog/2017/03/01/tuple-iterator.html for a better
+// tuple iterator
 
 namespace util {
 
+// See: https://stackoverflow.com/questions/36612596/tuple-to-parameter-pack
+
+template <size_t I, typename T> struct tuple_n {
+  template <typename... Args>
+  using type = typename tuple_n<I - 1, T>::template type<T, Args...>;
+};
+
+template <typename T> struct tuple_n<0, T> {
+  template <typename... Args> using type = std::tuple<Args...>;
+};
+template <size_t I, typename T>
+using tuple_of = typename tuple_n<I, T>::template type<>;
+
+/*
+Stolen from
+https://stackoverflow.com/questions/28997271/c11-way-to-index-tuple-at-runtime-without-using-switch
+*/
 template <size_t I> struct visit_impl {
   template <typename T, typename F>
   static void visit(T &tup, size_t idx, F fun) {
