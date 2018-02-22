@@ -6,57 +6,76 @@
 //
 
 #include "gsl_timestepper.hpp"
+
+#include <iostream>
 #include <vector>
 
-// Your RHS should inherit from a ODESystem
-class Equation : public gsl_modules::ODESystem {
+using namespace gsl_modules;
+
+/*
+Consider the Van der Pol oscillator equation,
+    u''(t) + \mu u'(t) (u(t)^2 - 1) + u(t) = 0
+
+This can be converted into a first order system suitable for use with the
+routines described in this chapter by introducing a separate variable for the
+velocity, v = u'(t),
+    u' = v
+    v' = -u + \mu v (1-u^2)
+*/
+
+class VanDerPol {
 public:
-  // Ctor
-  Equation() {
-    // DO NOT FORGET TO DECLARE THE DIMENSION
-    dim = 2;
-  }
-
-  // Dtor
-  ~Equation() {}
-
-  // Right Hand Side NEEDS TO BE (DOUBLE, CONST DOUBLE*, DOUBLE*)
-  int RHS(double t, const double *y, double *f) {
+  // Van Der Pol equation
+  auto equation(const double *y, double *f) {
     f[0] = y[1];
-    f[1] = -y[0] - mu * y[1] * (y[0] * y[0] - 1);
-    return GSL_SUCCESS;
-    (void)t; // to avoid unused errors
-  }
+    f[1] = -y[0] + 10 * y[1] * (1 - y[0] * y[0]);
+  };
 
-private:
-  // User parameters
+  // Parameters
   double mu = 10;
-};
-
-int main() {
-
-  Equation sys;
-
-  gsl_modules::TimeStepper ts;
-  ts.init(sys, gsl_modules::RK89);
-
-  const double initialTime = 0.0, finalTime = 100.0;
-  const int n_steps = 100;
 
   // Initial State
   std::vector<double> y = {1.0, 0.0};
 
+  // Dimension of the problem
+  const size_t dimension = 2;
+};
+
+int main() {
+
+  // Create System
+  VanDerPol vdp;
+
+  // Cast main equation into a lambda (this needs to be the function signature
+  // for GSL!)
+  auto vdp_eq = [&](double t, const double *y, double *f) {
+    (void)t;
+    return vdp.equation(y, f);
+  };
+
+  // Create time stepper
+  TimeStepper ts;
+  ts.init(vdp_eq, vdp.dimension, RK89);
+
+  // Set time variables
+  const double initialTime = 0.0, finalTime = 100.0;
+  const size_t n_steps = 100;
+
+  // Integrate!!
   double currentTime = 0;
-  for (int i = 1; i <= n_steps; i++) {
-    double ti = i * (finalTime - initialTime) / n_steps;
-    int status = ts.step(currentTime, ti, y.data());
+  for (size_t i = 1; i <= n_steps; i++) {
+    double nextTime = i * (finalTime - initialTime) / n_steps;
+    int status = ts.step(currentTime, nextTime, vdp.y);
 
     if (status != GSL_SUCCESS) {
       printf("error, return value=%d\n", status);
       break;
     }
 
-    printf("%.5e %.5e %.5e\n", currentTime, y[0], y[1]);
+    // NOTE: It's very bad design to mix IOs like stdcout with computation, but
+    // this is just an example
+    printf("t =  %.2e \t u(t) = %.5e \t v(t) = %.5e\n", currentTime, vdp.y[0],
+           vdp.y[1]);
   }
 
   return 0;

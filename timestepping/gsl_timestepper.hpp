@@ -12,6 +12,8 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_odeiv2.h>
 
+#include "../function.hpp"
+
 #include <assert.h>
 #include <iostream>
 
@@ -22,47 +24,6 @@ enum StepperType {
   RKF45,  // Runge-Kutta-Fehlberg (4, 5)
   RKCK45, // Explicit embedded Runge-Kutta Cash-Karp (4, 5)
   RK89    // Explicit embedded Runge-Kutta Prince-Dormand (8, 9)
-};
-
-// Parent Class for ODE Systems
-class ODESystem {
-public:
-  // Ctor
-  ODESystem() {}
-
-  // Dtor
-  virtual ~ODESystem() {}
-
-  // Virtual bitch
-  virtual int RHS(double t, const double *y, double *f) = 0;
-
-  gsl_odeiv2_system *get() {
-    // Set up ODE System
-    if (!isSet) {
-      void *params = (void *)this;
-      _sys = {F, nullptr, dim, params};
-    }
-
-    return &_sys;
-  }
-
-private:
-  // Fucking GSL Gymnastics
-  static int F(double t, const double y[], double f[], void *params) {
-    ODESystem *me = reinterpret_cast<ODESystem *>(params);
-    return me->RHS(t, y, f);
-  };
-
-protected:
-  // Dimension of the solution
-  std::size_t dim;
-
-private:
-  // System to be evolved
-  gsl_odeiv2_system _sys;
-
-  // Is ODE Set up for GSL?
-  bool isSet = false;
 };
 
 // Summon Time Stepper for Runge Love
@@ -89,7 +50,9 @@ public:
   ~TimeStepper(){};
 
   // Initializer
-  void init(ODESystem &sys, StepperType type) {
+  template <typename Fn> void init(Fn &fn, size_t dimension, StepperType type) {
+
+    _sys.set_function(fn, dimension);
 
     gsl_odeiv2_step_type *T;
 
@@ -114,13 +77,13 @@ public:
       break;
     }
 
-    _driver.reset(gsl_odeiv2_driver_alloc_y_new(sys.get(), T, params.hstart,
+    _driver.reset(gsl_odeiv2_driver_alloc_y_new(_sys.get(), T, params.hstart,
                                                 params.epsabs, params.epsrel));
   }
 
   // Step from t0 to t1 (updating t0 to t1)
-  template <typename T> int step(double &t0, double t1, T *y) {
-    return gsl_odeiv2_driver_apply(_driver.get(), &t0, t1, y);
+  template <typename Container> int step(double &t0, double t1, Container &c) {
+    return gsl_odeiv2_driver_apply(_driver.get(), &t0, t1, c.data());
   }
 
 public:
@@ -130,6 +93,10 @@ public:
 private:
   // https://www.gnu.org/software/gsl/manual/html_node/Driver.html#Driver
   std::unique_ptr<gsl_odeiv2_driver, ODEDeleter> _driver;
+
+  // ODE system
+  GSLODESystem _sys;
 };
+
 } // namespace gsl_modules
 #endif /* runge_kutta_h */
