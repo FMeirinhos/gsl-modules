@@ -1,5 +1,5 @@
 //
-//  rungekutta.cpp
+//  example.cpp
 //  gsl-modules
 //
 //  Created by Francisco Meirinhos on 27/01/17.
@@ -26,9 +26,9 @@ velocity, v = u'(t),
 class VanDerPol {
 public:
   // Van Der Pol equation
-  auto equation(const double *y, double *f) {
+  auto equation(const double *y, double *f) const {
     f[0] = y[1];
-    f[1] = -y[0] + 10 * y[1] * (1 - y[0] * y[0]);
+    f[1] = -y[0] + mu * y[1] * (1 - y[0] * y[0]);
   };
 
   // Parameters
