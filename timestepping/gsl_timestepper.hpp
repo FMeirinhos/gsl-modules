@@ -57,19 +57,19 @@ public:
     gsl_odeiv2_step_type *T;
 
     switch (type) {
-    case RK23:
+    case StepperType::RK23:
       T = const_cast<gsl_odeiv2_step_type *>(gsl_odeiv2_step_rk2);
       break;
-    case RK4:
+    case StepperType::RK4:
       T = const_cast<gsl_odeiv2_step_type *>(gsl_odeiv2_step_rk4);
       break;
-    case RKF45:
+    case StepperType::RKF45:
       T = const_cast<gsl_odeiv2_step_type *>(gsl_odeiv2_step_rkf45);
       break;
-    case RKCK45:
+    case StepperType::RKCK45:
       T = const_cast<gsl_odeiv2_step_type *>(gsl_odeiv2_step_rkck);
       break;
-    case RK89:
+    case StepperType::RK89:
       T = const_cast<gsl_odeiv2_step_type *>(gsl_odeiv2_step_rk8pd);
       break;
     default:
@@ -82,8 +82,8 @@ public:
   }
 
   // Step from t0 to t1 (updating t0 to t1)
-  template <typename Container> int step(double &t0, double t1, Container &c) {
-    return gsl_odeiv2_driver_apply(_driver.get(), &t0, t1, c.data());
+  int step(double &t0, double t1, double *data) {
+    return gsl_odeiv2_driver_apply(_driver.get(), &t0, t1, data);
   }
 
 public:

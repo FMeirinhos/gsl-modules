@@ -65,7 +65,7 @@ int main() {
   double currentTime = 0;
   for (size_t i = 1; i <= n_steps; i++) {
     double nextTime = i * (finalTime - initialTime) / n_steps;
-    int status = ts.step(currentTime, nextTime, vdp.y);
+    int status = ts.step(currentTime, nextTime, vdp.y.data());
 
     if (status != GSL_SUCCESS) {
       printf("error, return value=%d\n", status);
