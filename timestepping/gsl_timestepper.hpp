@@ -16,6 +16,7 @@
 
 #include <assert.h>
 #include <iostream>
+#include <memory>
 
 namespace gsl_modules {
 enum StepperType {

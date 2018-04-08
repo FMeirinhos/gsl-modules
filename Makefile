@@ -1,7 +1,7 @@
 CXX = g++
-CXX_STD = -std=c++1z -O2 -Wall -Wextra -Werror
+CXX_STD = -std=c++14 -O2 -Wall -Wextra -Werror
 
-GSL_CFLAGS = -I/usr/local/include
+GSL_CFLAGS = -I/usr/include
 GSL_LFLAGS = -L/usr/lib -lgsl -lgslcblas -lm
 
 CXX_CFLAGS = ${CXX_STD} ${GSL_CFLAGS}
